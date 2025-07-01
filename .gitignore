@@ -1,0 +1,13 @@
+*.png
+*.pyc
+*.txt
+*.mp4
+*.jpg
+*.ply
+*.pth
+*.wandb
+*.json
+*.pt
+*.log
+*.avi
+
