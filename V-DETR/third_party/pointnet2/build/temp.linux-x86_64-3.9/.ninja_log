@@ -1,0 +1,10 @@
+# ninja log v5
+3	12237	1749696582463177159	/perception/heefe/git_projects/V-DETR/third_party/pointnet2/build/temp.linux-x86_64-3.9/_ext_src/src/ball_query_gpu.o	76c946ef66c33f2b
+5	12342	1749696582571177506	/perception/heefe/git_projects/V-DETR/third_party/pointnet2/build/temp.linux-x86_64-3.9/_ext_src/src/interpolate_gpu.o	e22d4307433ecd5c
+6	12522	1749696582755178098	/perception/heefe/git_projects/V-DETR/third_party/pointnet2/build/temp.linux-x86_64-3.9/_ext_src/src/sampling_gpu.o	fad2dbff3bce924c
+4	12628	1749696582851178405	/perception/heefe/git_projects/V-DETR/third_party/pointnet2/build/temp.linux-x86_64-3.9/_ext_src/src/group_points_gpu.o	11ad6569d12da39e
+2	12851	1749696583083179151	/perception/heefe/git_projects/V-DETR/third_party/pointnet2/build/temp.linux-x86_64-3.9/_ext_src/src/ball_query.o	87e395f124f22b79
+4	12918	1749696583151179370	/perception/heefe/git_projects/V-DETR/third_party/pointnet2/build/temp.linux-x86_64-3.9/_ext_src/src/interpolate.o	84e653ca92aba88c
+3	13058	1749696583291179819	/perception/heefe/git_projects/V-DETR/third_party/pointnet2/build/temp.linux-x86_64-3.9/_ext_src/src/bindings.o	8b06f2373f0a2fa7
+3	13571	1749696583799181453	/perception/heefe/git_projects/V-DETR/third_party/pointnet2/build/temp.linux-x86_64-3.9/_ext_src/src/group_points.o	cfef0af2c082cc3c
+5	13749	1749696583971182005	/perception/heefe/git_projects/V-DETR/third_party/pointnet2/build/temp.linux-x86_64-3.9/_ext_src/src/sampling.o	4d28956beff77f4c
