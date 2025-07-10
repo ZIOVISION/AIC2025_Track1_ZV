@@ -11,3 +11,5 @@ cython
 timm
 wandb
 open3d
+shapely
+h5py
