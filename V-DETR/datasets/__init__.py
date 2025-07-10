@@ -11,7 +11,7 @@ DATASET_FUNCTIONS = {
 
 def build_dataset(args):
     dataset_builder = DATASET_FUNCTIONS[args.dataset_name][0]
-    dataset_config = DATASET_FUNCTIONS[args.dataset_name][1]()
+    dataset_config = DATASET_FUNCTIONS[args.dataset_name][1](args.merge_cls)
     
     if args.test_only:
         dataset_dict = {

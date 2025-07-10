@@ -147,12 +147,7 @@ def do_train(
                     commit=not use_evaluate
                 )
 
-        # if (
-        #     epoch > args.max_epoch * 0.90
-        #     and args.save_separate_checkpoint_every_epoch > 0
-        #     and epoch % args.save_separate_checkpoint_every_epoch == 0
-        # ) or (epoch > args.max_epoch * 0.6 and epoch % args.eval_every_epoch == 0):
-        #     # separate checkpoints are stored as checkpoint_{epoch}.pth
+
         save_checkpoint(
             args.checkpoint_dir,
             model_no_ddp,
@@ -336,58 +331,6 @@ def main(local_rank, args):
 
     datasets, dataset_config = build_dataset(args)
     model = build_model(args, dataset_config)
-    if args.test_ckpt != "":
-        print(f"Loading checkpoint from {args.test_ckpt}...")
-        sd = torch.load(args.test_ckpt, map_location=torch.device("cpu"))
-        checkpoint_state_dict = sd["model"]
-        model_state_dict = model.state_dict() 
-
-        filtered_state_dict = {}
-        for k, v in checkpoint_state_dict.items():
-            if k in model_state_dict and v.shape == model_state_dict[k].shape:
-                filtered_state_dict[k] = v
-            else:
-                print(f"Skipping layer {k} due to shape mismatch.")
-
-        # 필터링된 state_dict를 로드
-        missing_keys, unexpected_keys = model.load_state_dict(filtered_state_dict, strict=False)
-
-        print("Successfully loaded pre-trained weights.")
-        if missing_keys:
-            print("Missing keys (correctly ignored angle heads):", missing_keys)
-        if unexpected_keys:
-            print("Unexpected keys:", unexpected_keys)
-
-
-    # # 1. 모델의 모든 파라미터를 우선 동결(freeze)시킵니다.
-    # print("Freezing all model parameters...")
-    # for param in model.parameters():
-    #     param.requires_grad = False
-
-    # # 2. angle_residual_head 부분의 파라미터만 학습하도록 활성화(unfreeze)합니다.
-    # # vdetr_transformer.py를 보면 mlp_heads는 ModuleList 또는 ModuleDict일 수 있습니다.
-    # print("Unfreezing angle_residual_head parameters...")
-    # if isinstance(model.decoder.mlp_heads, torch.nn.ModuleList):
-    #     # mlp_sep=True인 경우, ModuleList 안에 여러 ModuleDict가 존재
-    #     for layer_heads in model.decoder.mlp_heads:
-    #         if "angle_residual_head" in layer_heads:
-    #             for param in layer_heads["angle_residual_head"].parameters():
-    #                 param.requires_grad = True
-    # elif isinstance(model.decoder.mlp_heads, torch.nn.ModuleDict):
-    #     # mlp_sep=False인 경우, 단일 ModuleDict
-    #     if "angle_residual_head" in model.decoder.mlp_heads:
-    #         for param in model.decoder.mlp_heads["angle_residual_head"].parameters():
-    #             param.requires_grad = True
-    
-    # # 학습될 파라미터 이름과 개수를 확인합니다.
-    # print("\n========== Trainable Parameters ==========")
-    # trainable_params_count = 0
-    # for name, param in model.named_parameters():
-    #     if param.requires_grad:
-    #         print(name)
-    #         trainable_params_count += param.numel()
-    # print(f"Total trainable parameters: {trainable_params_count}")
-    # print("========================================\n")
 
     model = model.cuda(local_rank)
     model_no_ddp = model

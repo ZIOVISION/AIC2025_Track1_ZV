@@ -27,10 +27,10 @@ def get_bev_polygon(center, size, yaw):
     w, l = size[0], size[1]
     
     corners = np.array([
-        [-w/2, -l/2],  # 좌측 하단
-        [-w/2, l/2],   # 좌측 상단
-        [w/2, l/2],    # 우측 상단
-        [w/2, -l/2]   # 우측 하단
+        [-w/2, -l/2],
+        [-w/2, l/2],   
+        [w/2, l/2],    
+        [w/2, -l/2]   
     ])
     rotation_matrix = np.array([
         [np.cos(yaw), -np.sin(yaw)],
@@ -44,10 +44,10 @@ def get_bev_polygon_torch(center, size, yaw):
     w, l = size[0].item(), size[1].item() 
     
     corners = np.array([
-        [-w/2, -l/2],  # 좌측 하단
-        [-w/2, l/2],   # 좌측 상단
-        [w/2, l/2],    # 우측 상단
-        [w/2, -l/2]   # 우측 하단
+        [-w/2, -l/2],
+        [-w/2, l/2],
+        [w/2, l/2],
+        [w/2, -l/2]
     ])
     rotation_matrix = np.array([
         [np.cos(yaw), -np.sin(yaw)],
@@ -58,11 +58,9 @@ def get_bev_polygon_torch(center, size, yaw):
 
 def compute_iou_3d_yaw(box1_center, box1_size, box1_yaw, box2_center, box2_size, box2_yaw, is_torch=True):
     if is_torch:
-        # BEV IoU 계산
         poly1 = get_bev_polygon_torch(box1_center, box1_size, box1_yaw)
         poly2 = get_bev_polygon_torch(box2_center, box2_size, box2_yaw)
     else:
-        # BEV IoU 계산
         poly1 = get_bev_polygon(box1_center, box1_size, box1_yaw)
         poly2 = get_bev_polygon(box2_center, box2_size, box2_yaw)
     
@@ -71,11 +69,9 @@ def compute_iou_3d_yaw(box1_center, box1_size, box1_yaw, box2_center, box2_size,
     bev_iou = intersection_area / union_area if union_area > 0 else 0
 
     if is_torch:
-        # Z-axis IoU 계산
         cz1, h1 = box1_center[2].item(), box1_size[2].item()
         cz2, h2 = box2_center[2].item(), box2_size[2].item()
     else:
-        # Z-axis IoU 계산
         cz1, h1 = box1_center[2], box1_size[2]
         cz2, h2 = box2_center[2], box2_size[2]
     z_min1, z_max1 = cz1 - h1/2, cz1 + h1/2
@@ -94,7 +90,6 @@ def apply_nms_to_detections(detections, iou_threshold=0.1):
     if not detections:
         return torch.empty(0, 3), torch.empty(0, 3), torch.empty(0), torch.empty(0), torch.empty(0)
 
-    # 모든 detection을 하나의 텐서로 통합
     all_centers, all_sizes, all_yaws, all_classes, all_scores = [], [], [], [], []
     for centers, sizes, yaws, classes, scores in detections:
         all_centers.append(centers)
@@ -114,35 +109,27 @@ def apply_nms_to_detections(detections, iou_threshold=0.1):
 
     keep_indices = []
 
-    # 클래스별로 NMS 수행
     for cls in classes.unique():
         cls_mask = (classes == cls)
         
-        # 현재 클래스에 해당하는 데이터 추출
         cls_centers = centers[cls_mask]
         cls_sizes = sizes[cls_mask]
         cls_yaws = yaws[cls_mask]
         cls_scores = scores[cls_mask]
         
-        # 점수 기준으로 내림차순 정렬
         order = cls_scores.argsort(descending=True)
         
-        # 원본 인덱스를 추적하기 위해 사용
         original_indices = torch.where(cls_mask)[0]
 
         while order.numel() > 0:
-            # 가장 점수가 높은 박스의 인덱스를 가져옴
             i = order[0]
-            # 최종적으로 유지할 인덱스 리스트에 추가 (원본 인덱스로 변환)
             keep_indices.append(original_indices[i].item())
 
             if order.numel() == 1:
                 break
 
-            # 나머지 박스들의 인덱스
             rest_order = order[1:]
 
-            # 현재 가장 점수가 높은 박스와 나머지 모든 박스 간의 IoU 계산
             ious = torch.tensor([
                 compute_iou_3d_yaw(
                     cls_centers[i], cls_sizes[i], cls_yaws[i],
@@ -150,11 +137,9 @@ def apply_nms_to_detections(detections, iou_threshold=0.1):
                 ) for j in rest_order
             ], device=centers.device)
             
-            # IoU가 임계값 이하인 박스들만 남김 (이것이 올바른 NMS 로직)
             keep_mask = ious <= iou_threshold
             order = rest_order[keep_mask]
 
-    # 최종 선택된 인덱스로 데이터 필터링
     keep_indices = torch.tensor(keep_indices, dtype=torch.long)
     kept_centers = centers[keep_indices]
     kept_sizes = sizes[keep_indices]
@@ -265,9 +250,7 @@ def is_clockwise(p):
     y = p[:, 1]
     return np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)) > 0
 
-# 2D/BEV IoU 계산에 필요한 헬퍼 함수들은 이전과 동일합니다.
 def polygon_area(corners_2d):
-    """2D 다각형의 면적을 Shoelace 공식을 이용해 계산합니다."""
     n = len(corners_2d)
     if n < 3:
         return 0.0
@@ -279,7 +262,6 @@ def polygon_area(corners_2d):
     return abs(area) / 2.0
 
 def sutherland_hodgman_clip(subject_polygon, clip_polygon):
-    """Sutherland-Hodgman 알고리즘을 이용해 다각형을 클리핑합니다."""
     def is_inside(p, edge_start, edge_end):
         return (edge_end[0] - edge_start[0]) * (p[1] - edge_start[1]) > \
                (edge_end[1] - edge_start[1]) * (p[0] - edge_start[0])
@@ -318,12 +300,8 @@ def sutherland_hodgman_clip(subject_polygon, clip_polygon):
     return np.array(output_list)
 
 def get_bev_corners(corners_3d):
-    """3D 코너에서 BEV(XY 평면) 2D 코너를 추출하고 정렬합니다."""
-    # Pitch/Roll이 0이므로, Z값과 무관하게 XY좌표는 4개의 유니크한 값만 가집니다.
-    # np.unique를 사용해 중복을 제거하고 4개의 BEV 코너를 얻습니다.
     bev_corners = np.unique(corners_3d[:, :2], axis=0)
     
-    # 코너들을 시계방향 또는 반시계방향으로 정렬합니다.
     mean_x = np.mean(bev_corners[:, 0])
     mean_y = np.mean(bev_corners[:, 1])
     angles = np.arctan2(bev_corners[:, 1] - mean_y, bev_corners[:, 0] - mean_x)
@@ -333,24 +311,11 @@ def get_bev_corners(corners_3d):
 
 
 def box3d_iou(corners1, corners2):
-    """
-    3D 경계 상자의 IoU를 계산합니다. (단, pitch와 roll은 0으로 가정)
-
-    Input:
-        corners1: numpy array (8,3), 첫 번째 박스의 8개 코너
-        corners2: numpy array (8,3), 두 번째 박스의 8개 코너
-    Output:
-        iou_3d: 3D bounding box IoU (정확한 값)
-        iou_2d: Bird's eye view 2D bounding box IoU (정확한 값)
-    """
-    # ====== 1. 2D BEV IoU 계산 ======
     poly1 = get_bev_corners(corners1)
     poly2 = get_bev_corners(corners2)
-    # 2. 좌표를 이용해 Polygon 객체 생성
     poly1 = Polygon(poly1)
     poly2 = Polygon(poly2)
 
-    # 3. intersection() 메소드를 사용해 교집합 폴리곤 계산
     intersection_poly = poly1.intersection(poly2)
     intersection_area = intersection_poly.area
 
@@ -360,9 +325,7 @@ def box3d_iou(corners1, corners2):
     union_area = poly1.union(poly2).area
     iou_2d = intersection_area / union_area if union_area > 1e-8 else 0.0
 
-    # ====== 2. 3D IoU 계산 (간소화 및 정확) ======
     
-    # 2.1. Z축 교차 높이 계산
     z_max1 = np.max(corners1[:, 2])
     z_min1 = np.min(corners1[:, 2])
     z_max2 = np.max(corners2[:, 2])
@@ -373,13 +336,11 @@ def box3d_iou(corners1, corners2):
     
     intersection_height = max(0, z_intersection_max - z_intersection_min)
 
-    # 2.2. 3D 교차 부피 및 전체 부피 계산
     intersection_vol = intersection_area * intersection_height
     
     vol1 = area1 * (z_max1 - z_min1)
     vol2 = area2 * (z_max2 - z_min2)
     
-    # 2.3. 3D IoU 계산
     union_vol = vol1 + vol2 - intersection_vol
     iou_3d = intersection_vol / union_vol if union_vol > 1e-8 else 0.0
 

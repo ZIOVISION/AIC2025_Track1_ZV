@@ -102,26 +102,19 @@ batchsize_per_gpu: 1
 filt_empty: true
 merge_cls: true
 
-rot_ratio: 5.0
-trans_ratio: 0.4
-scale_ratio: 0.4
+
 normal_trans: false
 
 random_fps: true
 use_color: true
 xyz_color: true
-color_drop: 0.0
-color_contrastp: 0.0
-color_jitterp: 0.0
-hue_sat: "0.5_0.2_0.0"
 color_mean: -1.0
-coloraug_sunrgbd: false
 
 # -------------------------------
 # Training
 # -------------------------------
 start_epoch: -1
-max_epoch: 100
+max_epoch: 50
 step_epoch: ""
 eval_every_epoch: 10
 seed: 0
