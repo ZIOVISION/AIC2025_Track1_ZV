@@ -108,7 +108,6 @@ def do_train(
             dataset_config,
             dataloaders["train"],
         )
-        print(wandb_loss_details)
 
         # latest checkpoint is always stored in checkpoint.pth
         save_checkpoint(
