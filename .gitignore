@@ -11,3 +11,6 @@
 *.log
 *.avi
 
+*/.cache/*
+dataset/*
+weights/*

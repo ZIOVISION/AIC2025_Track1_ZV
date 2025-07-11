@@ -280,39 +280,32 @@ def main():
     model = load_model(args, dataset_config)
 
     test_scene_names = ['Warehouse_017', 'Warehouse_018','Warehouse_019','Warehouse_020']  # 테스트할 씬 이름
-    valid_scene_names = ['Warehouse_016']  # 검증할 씬 이름
     
-    #scene_names = valid_scene_names
-    split_names = ['test']#['val','test']
-    for split_name in split_names:
-        if split_name == 'val':
-            scene_names = valid_scene_names
-        elif split_name == 'test':
-            scene_names = test_scene_names
-        
-        for scene_id, scene_name in enumerate(scene_names):
-            for frame_idx in tqdm.tqdm(range(0, 9000), desc="Processing frames"):
-                output_path = f'/perception/dataset/PhysicalAI-SmartSpaces/MTMC_Tracking_2025_outputs/detection/{split_name}_det_out/{scene_name}_{frame_idx:05d}.txt'
-                os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                if os.path.exists(output_path):
-                    continue
-                with open(output_path, 'w') as f:
-                    f.write(f"# {scene_name} frame {frame_idx}\n")
-                centers, sizes, yaws, classes, scores = run_tta_inference_with_nms(
-                    model,
-                    f'/perception/dataset/PhysicalAI-SmartSpaces/pcd_dataset/{split_name}/pcd/{scene_name}_{frame_idx:05d}.ply',
-                    #f'/perception/kanghee/ai_city/pcd_output2/{split_name}/{scene_name}/pcd/{frame_idx:05d}.ply',#/perception/kanghee/ai_city/pcd_output2/test
-                    voxel_size=20.0,
-                    overlap=0.5,
-                    use_color=args.use_color,
-                    num_points=args.num_points,
-                    iou_threshold=0.1
-                )
+    split_names = ['test']
+    
+    scene_names = ['Warehouse_017', 'Warehouse_018','Warehouse_019','Warehouse_020']
+    
+    for scene_id, scene_name in enumerate(scene_names):
+        for frame_idx in tqdm.tqdm(range(0, 9000), desc="Processing frames"):
+            output_path = f'/perception/dataset/PhysicalAI-SmartSpaces/MTMC_Tracking_2025_outputs/detection/{split_name}_det_out/{scene_name}_{frame_idx:05d}.txt'
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            if os.path.exists(output_path):
+                continue
+            with open(output_path, 'w') as f:
+                f.write(f"# {scene_name} frame {frame_idx}\n")
+            centers, sizes, yaws, classes, scores = run_tta_inference_with_nms(
+                model,
+                f'/perception/dataset/PhysicalAI-SmartSpaces/pcd_dataset/{split_name}/pcd/{scene_name}_{frame_idx:05d}.ply',
+                voxel_size=20.0,
+                overlap=0.5,
+                use_color=args.use_color,
+                num_points=args.num_points,
+                iou_threshold=0.1
+            )
 
-                # Save
-                #save_predictions_to_ply(centers, sizes, yaws, out_path="Warehouse_017_08500_pred2.ply")
-                save_submission_txt(centers, sizes, yaws, classes,scores, out_path=output_path,
-                                    scene_id=scene_id, frame_id=frame_idx)
+            # Save
+            save_submission_txt(centers, sizes, yaws, classes,scores, out_path=output_path,
+                                scene_id=scene_id, frame_id=frame_idx)
 
 
 
