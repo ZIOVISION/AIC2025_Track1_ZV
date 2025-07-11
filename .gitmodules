@@ -1,3 +1,6 @@
 [submodule "MinkowskiEngine"]
 	path = MinkowskiEngine
 	url = https://github.com/NVIDIA/MinkowskiEngine.git
+[submodule "pytorch-metric-learning"]
+	path = pytorch-metric-learning
+	url = https://github.com/KevinMusgrave/pytorch-metric-learning.git
