@@ -4,6 +4,7 @@ CUR_DIR=$(pwd)
 cd ReIdModel
 
 python extract_reid_feat.py \
+    --model_path "best_reid_model.pth" \
     --split_name "test" \
     --det_root "${CUR_DIR}/outputs/detection" \
     --reid_feat_root "${CUR_DIR}/outputs/reid_feat" \
