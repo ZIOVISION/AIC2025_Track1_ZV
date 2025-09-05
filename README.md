@@ -30,25 +30,31 @@ Our implementation is built upon:
 
 ### Installation
 
-**Step 1.** Create a conda environment:
+**Step 1.** Clone the repository with submodules:
+```bash
+git clone --recursive https://github.com/ZIOVISION/AIC2025_Track1_ZV.git
+cd AIC2025_Track1_ZV
+```
+
+**Step 2.** Create a conda environment:
 ```bash
 conda create --name aic2025 python=3.8 -y
 conda activate aic2025
 ```
 
-**Step 2.** Install PyTorch:
+**Step 3.** Install PyTorch:
 ```bash
 conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch -y
 ```
 
-**Step 3.** Install required packages:
+**Step 4.** Install required packages:
 ```bash
 cd V-DETR
 pip install -r requirements.txt
 cd ..
 ```
 
-**Step 4.** Install MinkowskiEngine:
+**Step 5.** Install MinkowskiEngine:
 ```bash
 cd MinkowskiEngine
 conda install -c conda-forge openblas -y
@@ -56,8 +62,14 @@ python setup.py install --blas_include_dirs=${CONDA_PREFIX}/include --blas=openb
 cd ..
 ```
 
+**Step 6.** Install pytorch-metric-learning:
+```bash
+cd pytorch-metric-learning
+pip install -e .
+cd ..
+```
 
-**Step 5.** Install third party dependencies:
+**Step 7.** Install third party dependencies:
 ```bash
 pip install openmim
 mim install mmcv-full==1.6.1
