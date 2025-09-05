@@ -104,8 +104,6 @@ def parse_args():
                        help="Dataset splits to process (space-separated). e.g., --splits train val")
     parser.add_argument('--specific_scene', type=str, default=None,
                        help="Process only a specific scene (e.g., 'Warehouse_014'). If None, process all scenes")
-    parser.add_argument('--frame_skip', type=int, default=1,
-                       help="Skip every N frames (1 means process all frames)")
     
     return parser.parse_args()
 
@@ -118,7 +116,6 @@ def main():
     print(f"Output directory: {args.out_dir}")
     print(f"Processing splits: {args.splits}")
     print(f"Specific scene: {args.specific_scene if args.specific_scene else 'All scenes'}")
-    print(f"Frame skip: {args.frame_skip}")
     
     for split_set in args.splits:
         print(f"\nProcessing split: {split_set}")
@@ -144,10 +141,6 @@ def main():
         
         # Sort files for consistent processing order
         pcd_files.sort()
-        
-        # Apply frame skipping
-        if args.frame_skip > 1:
-            pcd_files = pcd_files[::args.frame_skip]
         
         print(f"Found {len(pcd_files)} files to process in {split_set} split")
         

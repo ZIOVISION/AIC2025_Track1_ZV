@@ -99,7 +99,7 @@ def main():
     split_set = args.splits
 
     for split in split_set:
-        if split == 'train':
+        if split == 'train' or split == 'val':
             num_skip_frame = 99
         else:
             num_skip_frame = 0
