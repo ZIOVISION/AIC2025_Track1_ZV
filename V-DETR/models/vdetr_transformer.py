@@ -703,9 +703,15 @@ class GlobalShareCrossAttention(nn.Module):
         nK = xyz.shape[1]
         for i in range(8):
             deltas = reference_point[:,:,None,i,:] - xyz[:,None,:,:]
-            if reference_angle is not None:
-                R = rotz_batch_tensor(reference_angle) # 4, 256, 3, 3
+            if self.angle_type == "object_coords" and reference_angle is not None:
+                deltas[..., 2] *= -1 
+                deltas[..., [0, 1, 2]] = deltas[..., [0, 2, 1]] # X,Y,Z -> X, -Z, Y
+
+                R = roty_batch_tensor(reference_angle) # 4, 256, 3, 3
                 deltas = torch.matmul(deltas, R)
+
+                deltas[..., 1] *= -1 
+                deltas[..., [0, 1, 2]] = deltas[..., [0, 2, 1]] # X, -Z, Y -> X,Y,Z
 
             deltas = torch.sign(deltas) * torch.log2(torch.abs(deltas)*self.log_scale + 1.0) / np.log2(8)
             delta = deltas / self.max_value # B, nQ, nP, 3
@@ -717,6 +723,7 @@ class GlobalShareCrossAttention(nn.Module):
             else:
                 rpe += F.grid_sample(rpe_table, delta.view(1, 1, 1, -1, 3).to(rpe_table.dtype), mode=self.interp_method,align_corners=True) \
                         .squeeze().view(-1, B, nQ, nK).permute(1, 0, 2, 3)
+
                   
         B_, N_key, C = key.shape
         k = self.k(key).reshape(B_, N_key, 1, C // self.num_heads).permute(0, 2, 1, 3)
@@ -745,6 +752,21 @@ class GlobalShareCrossAttention(nn.Module):
         x = self.proj_drop(x).permute(1,0,2)
         return x, attn
 
+
+
+def roty_batch_tensor(t):
+    input_shape = t.shape
+    output = torch.zeros(
+        tuple(list(input_shape) + [3, 3]), dtype=torch.float32, device=t.device
+    )
+    c = torch.cos(t)
+    s = torch.sin(t)
+    output[..., 0, 0] = c
+    output[..., 0, 2] = s
+    output[..., 1, 1] = 1
+    output[..., 2, 0] = -s
+    output[..., 2, 2] = c
+    return output
 
 
 def rotz_batch_tensor(t):

@@ -33,7 +33,8 @@ def wandb_log(*args, **kwargs):
 def load_config():
     parser = argparse.ArgumentParser(description="V-DETR config loader")
     parser.add_argument('--config', type=str, required=True, help='Path to config YAML file')
-    parser.add_argument('--ngpus', type=int, default=1, help='Number of GPUs to use')
+    parser.add_argument('--ngpus', type=int, default=None, help='Number of GPUs to use')
+    parser.add_argument('--dataset_root_dir', type=str, default=None, help='Root directory of the dataset')
 
     cli_args = parser.parse_args()
 
@@ -41,7 +42,11 @@ def load_config():
     with open(cli_args.config, 'r') as f:
         config_dict = yaml.safe_load(f)
 
-    config_dict['ngpus'] = cli_args.ngpus
+    if cli_args.ngpus is not None:
+        config_dict['ngpus'] = cli_args.ngpus
+    if cli_args.dataset_root_dir is not None:
+        config_dict['dataset_root_dir'] = cli_args.dataset_root_dir
+    
 
     return SimpleNamespace(**config_dict)
 
@@ -121,7 +126,7 @@ def do_train(
         )
 
         curr_iter = epoch * len(dataloaders["train"])
-        use_evaluate = ((epoch != 0) and (epoch % args.eval_every_epoch == 0 or epoch == (args.max_epoch - 1))) or (epoch == 10)
+        use_evaluate = ((epoch != 0) and (epoch % args.eval_every_epoch == 0 or epoch == (args.max_epoch - 1)))
 
         if is_primary():
             log_message = dict(\
@@ -331,7 +336,27 @@ def main(local_rank, args):
 
     datasets, dataset_config = build_dataset(args)
     model = build_model(args, dataset_config)
+    if args.test_ckpt != "":
+        print(f"Loading checkpoint from {args.test_ckpt}...")
+        sd = torch.load(args.test_ckpt, map_location=torch.device("cpu"))
+        checkpoint_state_dict = sd["model"]
+        model_state_dict = model.state_dict() 
 
+        filtered_state_dict = {}
+        for k, v in checkpoint_state_dict.items():
+            if k in model_state_dict and v.shape == model_state_dict[k].shape:
+                filtered_state_dict[k] = v
+            else:
+                print(f"Skipping layer {k} due to shape mismatch.")
+
+        # Load the filtered state_dict
+        missing_keys, unexpected_keys = model.load_state_dict(filtered_state_dict, strict=False)
+
+        print("Successfully loaded pre-trained weights.")
+        if missing_keys:
+            print("Missing keys (correctly ignored angle heads):", missing_keys)
+        if unexpected_keys:
+            print("Unexpected keys:", unexpected_keys)
     model = model.cuda(local_rank)
     model_no_ddp = model
 

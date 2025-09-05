@@ -37,7 +37,7 @@ class AiCityDatasetConfig(object):
 
     def angle2class(self, angle):
         """ angle -> angle_class, angle_residual """
-        # num_angle_bin이 1이므로 angle_class는 항상 0, residual은 전체 각도
+        # Since num_angle_bin is 1, angle_class is always 0, residual is the full angle
         angle_class = 0
         angle_residual = angle
         return angle_class, angle_residual
@@ -138,6 +138,9 @@ class AiCityDetectionDataset(Dataset):
                 angle = list(map(float, tokens[8:11]))
                 angle[2] = yaw
                 boxes.append((center, size, angle))
+                # print('*'*20+'merge_cls'+'*'*20)
+                # print(self.args.merge_cls)
+                # print('*'*40)
                 if self.args.merge_cls:
                     if label==4 or label==5:  # Merge FourierGR1T2 and AgilityDigit
                         label = 0

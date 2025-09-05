@@ -6,8 +6,9 @@ import os
 import glob
 from collections import defaultdict
 import random
+import argparse
 
-import configs.baseline as cfg
+import configs.best as cfg
 
 from torch.utils.data import Dataset, DataLoader
 from pytorch_metric_learning import losses, miners
@@ -57,14 +58,33 @@ def evaluate(model, query_loader, gallery_loader, device):
     return rank1, rank5, mAP
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train ReID model on point cloud data")
+    parser.add_argument('--data_root', type=str, default='../dataset/obj_crop_pcd_dataset', 
+                       help="Root directory of the ReID training dataset")
+    parser.add_argument('--output_dir', type=str, default='./weights',
+                       help="Directory to save trained model weights")
+    return parser.parse_args()
+
 def main():
+    args = parse_args()
+    
     device = torch.device(cfg.DEVICE)
     
+    # Update paths based on arguments
+    train_dir = os.path.join(args.data_root, 'train')
+    val_dir = os.path.join(args.data_root, 'val')
+    output_dir = args.output_dir
+    
+    print(f"Training data directory: {train_dir}")
+    print(f"Validation data directory: {val_dir}")
+    print(f"Output directory: {output_dir}")
+    
     print("Creating Training Dataloader...")
-    train_loader, num_pids = create_dataloader(cfg.TRAIN_DIR,use_augmentation=True)
+    train_loader, num_pids = create_dataloader(train_dir, use_augmentation=True)
     print(f"Training Dataloader created. Number of classes (PIDs): {num_pids}")
     
-    query_list, gallery_list = create_query_gallery_split(cfg.VAL_DIR)
+    query_list, gallery_list = create_query_gallery_split(val_dir)
     query_dataset = ListBasedReIDDataset(query_list)
     gallery_dataset = ListBasedReIDDataset(gallery_list)
     val_query_loader = DataLoader(query_dataset, batch_size=128, shuffle=False, num_workers=cfg.NUM_WORKERS)
@@ -106,8 +126,8 @@ def main():
         print(f"Average Training Loss: {avg_loss:.4f}, Current LR: {scheduler.get_last_lr()[0]:.6f}")
         
         if epoch % 10 == 0:
-            os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
-            model_path = os.path.join(cfg.OUTPUT_DIR, f"reid_model_epoch_{epoch}.pth")
+            os.makedirs(output_dir, exist_ok=True)
+            model_path = os.path.join(output_dir, f"reid_model_epoch_{epoch}.pth")
             torch.save(model.state_dict(), model_path)
             print(f"Model saved to {model_path}")
 

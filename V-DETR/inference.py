@@ -18,14 +18,17 @@ from types import SimpleNamespace
 np.set_printoptions(precision=4, suppress=True)
 
 import tqdm
-MEAN_COLOR_RGB = np.array([109.8, 97.2, 83.8])  # 정규화용 컬러 평균
+MEAN_COLOR_RGB = np.array([109.8, 97.2, 83.8])  # Color mean for normalization
 import os
 
 def load_config():
     parser = argparse.ArgumentParser(description="V-DETR config loader")
     parser.add_argument('--config', type=str, required=True, help='Path to config YAML file')
     parser.add_argument('--test_ckpt', type=str, default=None, help='Path to the model checkpoint for testing')
-
+    parser.add_argument('--output_dir', type=str, default='/perception/dataset/PhysicalAI-SmartSpaces/MTMC_Tracking_2025_outputs/detection', help='Directory to save outputs')
+    parser.add_argument('--data_root', type=str, default='/perception/dataset/PhysicalAI-SmartSpaces/pcd_dataset', help='Directory containing the dataset')
+    parser.add_argument('--split_name', type=str, default='val', help='Dataset split name (e.g., test)')
+    parser.add_argument('--overlap', type=float, default=0.5)
     cli_args = parser.parse_args()
 
     # Load YAML config
@@ -34,6 +37,14 @@ def load_config():
 
     if cli_args.test_ckpt is not None:
         config_dict['test_ckpt'] = cli_args.test_ckpt
+    if cli_args.data_root is not None:
+        config_dict['data_root'] = cli_args.data_root
+    if cli_args.split_name is not None:
+        config_dict['split_name'] = cli_args.split_name
+    if cli_args.output_dir is not None:
+        config_dict['output_dir'] = cli_args.output_dir
+    if cli_args.overlap is not None:
+        config_dict['overlap'] = cli_args.overlap
 
     return SimpleNamespace(**config_dict)
 
@@ -143,7 +154,6 @@ def process_predictions(outputs, threshold=0.1, num_angle_bin=1):
 
     cls_logits = outputs['outputs']['sem_cls_logits'][obj_mask]
     classes = torch.argmax(cls_logits, dim=-1)
-    classes = torch.where(classes >= 4, torch.tensor(0, dtype=torch.int64).cuda(), classes)
 
     center = outputs['outputs']['center_unnormalized'][obj_mask]
     size = outputs['outputs']['size_unnormalized'][obj_mask]
@@ -168,14 +178,14 @@ def run_tta_inference_with_nms(model, full_pcd_path, voxel_size=20.0, overlap=0.
 
     step = voxel_size * (1 - overlap)
 
-    # X 슬라이스 시작점
+    # X slice starting points
     x_starts = list(np.arange(min_bound[0], max_bound[0] - voxel_size + 1e-3, step))
     if not x_starts:
         x_starts = [min_bound[0]]
     elif x_starts[-1] + voxel_size < max_bound[0]:
         x_starts.append(max_bound[0] - voxel_size)
 
-    # Y 슬라이스 시작점
+    # Y slice starting points
     y_starts = list(np.arange(min_bound[1], max_bound[1] - voxel_size + 1e-3, step))
     if not y_starts:
         y_starts = [min_bound[1]]
@@ -203,7 +213,7 @@ def run_tta_inference_with_nms(model, full_pcd_path, voxel_size=20.0, overlap=0.
                 input_pts = sliced_points
 
             if len(input_pts) < 10:
-                continue  # 너무 적은 점은 무시
+                continue  # Ignore patches with too few points
 
             idxs = np.random.choice(len(input_pts), num_points, replace=(len(input_pts) < num_points))
             sampled_points = input_pts[idxs]
@@ -216,8 +226,9 @@ def run_tta_inference_with_nms(model, full_pcd_path, voxel_size=20.0, overlap=0.
                 "point_cloud_dims_min": torch.from_numpy(pc_min).float().unsqueeze(0).cuda(),
                 "point_cloud_dims_max": torch.from_numpy(pc_max).float().unsqueeze(0).cuda()
             }
-
+            start = time.time()
             outputs = run_inference(model, input_data)
+            end = time.time()
             centers, sizes, yaws, classes, objectness_scores = process_predictions(outputs)
 
             detections.append((centers.cpu(), sizes.cpu(), yaws.cpu(), classes.cpu(),objectness_scores.cpu()))
@@ -279,15 +290,18 @@ def main():
     datasets, dataset_config = build_dataset(args)
     model = load_model(args, dataset_config)
 
-    test_scene_names = ['Warehouse_017', 'Warehouse_018','Warehouse_019','Warehouse_020']  # 테스트할 씬 이름
     
-    split_names = ['test']
-    
-    scene_names = ['Warehouse_017', 'Warehouse_018','Warehouse_019','Warehouse_020']
+    split_name = args.split_name
+    if split_name not in ['val', 'test']:
+        raise ValueError(f"Invalid split name: {split_name}. Must be 'val' or 'test'.")
+    if split_name == 'test':
+        scene_names = ['Warehouse_017', 'Warehouse_018','Warehouse_019','Warehouse_020']
+    else:
+        scene_names = ['Hospital_000','Lab_000','Warehouse_015','Warehouse_016']
     
     for scene_id, scene_name in enumerate(scene_names):
         for frame_idx in tqdm.tqdm(range(0, 9000), desc="Processing frames"):
-            output_path = f'/perception/dataset/PhysicalAI-SmartSpaces/MTMC_Tracking_2025_outputs/detection/{split_name}_det_out/{scene_name}_{frame_idx:05d}.txt'
+            output_path = f'{args.output_dir}/{split_name}_det_out/{scene_name}_{frame_idx:05d}.txt'
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             if os.path.exists(output_path):
                 continue
@@ -295,9 +309,9 @@ def main():
                 f.write(f"# {scene_name} frame {frame_idx}\n")
             centers, sizes, yaws, classes, scores = run_tta_inference_with_nms(
                 model,
-                f'/perception/dataset/PhysicalAI-SmartSpaces/pcd_dataset/{split_name}/pcd/{scene_name}_{frame_idx:05d}.ply',
+                f'{args.data_root}/{split_name}/pcd/{scene_name}_{frame_idx:05d}.ply',
                 voxel_size=20.0,
-                overlap=0.5,
+                overlap=args.overlap,
                 use_color=args.use_color,
                 num_points=args.num_points,
                 iou_threshold=0.1
