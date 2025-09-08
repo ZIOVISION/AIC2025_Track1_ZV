@@ -176,7 +176,7 @@ def trajectory_matching(chunk_idx, track_res_folder, reid_feat_folder, output_fo
         for frame, box, cls in zip(frames, boxes, classes):
             cx, cy, cz, w, l, h, yaw = box
             global_id = trajectory  # Use local ID as global ID
-            scene_id = chunk_idx  # Fixed value for example, adjust as needed in practice
+            scene_id = chunk_idx+17  # Fixed value for example, adjust as needed in practice
             cls = traj_data['dominant_class']  # Unify with dominant class
             results_lines.append(f"{scene_id} {cls} {global_id} {frame} {cx:.2f} {cy:.2f} {cz:.2f} {w:.2f} {l:.2f} {h:.2f} {yaw:.2f}\n")
 

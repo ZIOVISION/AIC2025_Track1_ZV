@@ -20,6 +20,7 @@ np.set_printoptions(precision=4, suppress=True)
 import tqdm
 MEAN_COLOR_RGB = np.array([109.8, 97.2, 83.8])  # Color mean for normalization
 import os
+import time
 
 def load_config():
     parser = argparse.ArgumentParser(description="V-DETR config loader")
@@ -27,7 +28,7 @@ def load_config():
     parser.add_argument('--test_ckpt', type=str, default=None, help='Path to the model checkpoint for testing')
     parser.add_argument('--output_dir', type=str, default='/perception/dataset/PhysicalAI-SmartSpaces/MTMC_Tracking_2025_outputs/detection', help='Directory to save outputs')
     parser.add_argument('--data_root', type=str, default='/perception/dataset/PhysicalAI-SmartSpaces/pcd_dataset', help='Directory containing the dataset')
-    parser.add_argument('--split_name', type=str, default='val', help='Dataset split name (e.g., test)')
+    parser.add_argument('--split_name', type=str, default='test', help='Dataset split name (e.g., test)')
     parser.add_argument('--overlap', type=float, default=0.5)
     cli_args = parser.parse_args()
 
@@ -226,9 +227,7 @@ def run_tta_inference_with_nms(model, full_pcd_path, voxel_size=20.0, overlap=0.
                 "point_cloud_dims_min": torch.from_numpy(pc_min).float().unsqueeze(0).cuda(),
                 "point_cloud_dims_max": torch.from_numpy(pc_max).float().unsqueeze(0).cuda()
             }
-            start = time.time()
             outputs = run_inference(model, input_data)
-            end = time.time()
             centers, sizes, yaws, classes, objectness_scores = process_predictions(outputs)
 
             detections.append((centers.cpu(), sizes.cpu(), yaws.cpu(), classes.cpu(),objectness_scores.cpu()))

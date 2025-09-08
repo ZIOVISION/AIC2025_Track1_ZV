@@ -9,6 +9,7 @@ Our approach combines:
 - **Embedding Similarity Classification**: Gallery-based classification refinement using feature similarity matching
 - **Multi-Camera Tracking**: Progressive association framework with short-term and long-term trajectory linking
 
+
 ## Dataset Availability
 
 The official dataset can be downloaded from the AI City Challenge website (https://huggingface.co/datasets/nvidia/PhysicalAI-SmartSpaces/tree/main/MTMC_Tracking_2025). 
@@ -18,6 +19,32 @@ The official dataset can be downloaded from the AI City Challenge website (https
 
 <img src="pipeline.png" width="1050" />
  
+
+## Results
+
+### Competition Performance
+
+Our method achieved **1st place** in the AI City Challenge 2025 Track1:
+
+| Team (Rank) | HOTA ↑ | DetA ↑ | AssA ↑ | LocA ↑ |
+|-------------|---------|---------|---------|---------|
+| **65 (1st, Ours)** | **69.91** | **71.34** | **69.06** | **78.27** |
+| 15 (2nd) | 63.14 | - | - | - |
+| 133 (3rd) | 28.75 | - | - | - |
+
+### Ablation Study
+
+Ablation study on the validation set. The performance of our baseline is progressively improved by adding the ESC (+ESC) and the offline Global Tracking framework (+Global Track). We report results on all classes and by excluding the *AgilityDigit* class, which is absent from the validation set.
+
+| Setting | Method | HOTA ↑ | DetA ↑ | AssA ↑ | LocA ↑ |
+|---------|---------|---------|---------|---------|---------|
+| All Classes | Baseline | 37.86 | 37.71 | 42.12 | 90.78 |
+| All Classes | +ESC | 44.68 | 50.55 | 43.49 | **92.06** |
+| All Classes | +Global Track | **58.20** | **56.00** | **64.53** | 91.98 |
+| w/o AgilityDigit | Baseline | 45.44 | 45.25 | 50.54 | 88.94 |
+| w/o AgilityDigit | +ESC | 53.61 | 60.67 | 52.19 | **90.47** |
+| w/o AgilityDigit | +Global Track | **69.84** | **67.19** | **77.43** | 90.37 |
+
 
 
 ## Environment Requirements
@@ -75,7 +102,7 @@ pip install openmim
 mim install mmcv-full==1.6.1
 cd V-DETR/third_party/pointnet2/ && python setup.py install --user
 cd ../../..
-pip install h5py open3d shapely
+pip install h5py open3d shapely filterpy
 cd V-DETR/utils && python cython_compile.py build_ext --inplace
 cd ../..
 ```
